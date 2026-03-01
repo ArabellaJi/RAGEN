@@ -709,7 +709,7 @@ class ContextManager:
 
         lines = [
             f"[Memory: {n} earlier step(s) summarized, not shown in full]",
-            f"Actions tried: {', '.join(all_actions) if all_actions else 'none'}",
+            f"Actions tried: {', '.join(str(a) for a in all_actions) if all_actions else 'none'}",
             f"Effective moves: {effective_count}/{len(all_actions)}",
             f"Cumulative reward from these steps: {total_reward:.2f}",
         ]
