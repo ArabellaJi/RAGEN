@@ -104,6 +104,8 @@ class SokobanEnv(BaseDiscreteActionEnv, GymSokobanEnv):
             reward += (prev_dist - new_dist) * self.config.distance_reward_coeff
         next_obs = self.render()
         action_effective = not np.array_equal(previous_pos, self.player_position)
+        if not action_effective and self.config.no_op_penalty != 0.0:
+            reward += self.config.no_op_penalty
         info = {"action_is_effective": action_effective, "action_is_valid": True, "success": success}
         return next_obs, reward, done, info
 

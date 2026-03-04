@@ -24,6 +24,9 @@ class SokobanEnvConfig:
     # reward += (prev_box_target_dist - new_box_target_dist) * distance_reward_coeff
     # 0.0 = disabled (default). Try 0.1~0.5 to encourage box movement toward target.
     distance_reward_coeff: float = 0.0
+    # Penalty added when the action has no effect (player position unchanged).
+    # Discourages repeating invalid actions. E.g. -0.3 makes no-ops cost 4x a normal step.
+    no_op_penalty: float = 0.0
 
     def __post_init__(self):
         if self.dim_x is not None and self.dim_y is not None:

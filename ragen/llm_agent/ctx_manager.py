@@ -714,7 +714,7 @@ class ContextManager:
             f"Cumulative reward from these steps: {total_reward:.2f}",
         ]
         if invalid_count > 0:
-            lines.append(f"Invalid action format: {invalid_count} time(s)")
+            lines.append(f"Invalid action format: {invalid_count} time(s). Valid actions are: Up, Down, Left, Right (separated by ' || ').")
         if any_success:
             lines.append("Note: puzzle was already solved during these steps.")
 
