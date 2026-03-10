@@ -160,6 +160,7 @@ class ContextManager:
     def _parse_response(self, response: str) -> List:
         pattern = r'<think>(.*?)</think>\s*<answer>(.*?)</answer>' if self.config.agent_proxy.enable_think else r'<answer>(.*?)</answer>'
         match = re.search(pattern, response, re.DOTALL)
+        think_coord_fmt_ok = False
         if not match:
             # think_content, action_content, actions = "", "", [] # do not remove this kind of invalid string
             llm_response, actions = response, []
@@ -184,7 +185,9 @@ class ContextManager:
 
             llm_response = f"<think>{think_content}</think><answer>{action_content}</answer>" if self.config.agent_proxy.enable_think else f"<answer>{action_content}</answer>"
             think_len = len(think_content)
-        return llm_response, actions, think_len
+            # Check if think starts with coordinate format: "Player: (r, c) | Box: (r, c) | Target: (r, c)"
+            think_coord_fmt_ok = bool(re.match(r'\s*Player:\s*\(\d+,\s*\d+\)', think_content))
+        return llm_response, actions, think_len, think_coord_fmt_ok
         
     def _normalize_score_tensor(self, score_tensor: torch.Tensor, env_outputs: List[Dict]) -> torch.Tensor:
         """
@@ -720,12 +723,26 @@ class ContextManager:
         def _action_name(a):
             return action_lookup.get(a, str(a))
 
+        # --- last known state coordinates ---
+        last_state_coords = ""
+        last_state = old_history[-1].get("state", "") if old_history else ""
+        if last_state:
+            coord_lines = [
+                line.strip() for line in last_state.splitlines()
+                if any(key in line for key in ("Targets:", "Boxes:", "Player:"))
+                and re.search(r'\(\d+', line)  # must contain an actual coordinate like (2,
+            ]
+            if coord_lines:
+                last_state_coords = "State at end of summary: " + " | ".join(coord_lines)
+
         lines = [
             f"[Memory: {n} earlier step(s) summarized, not shown in full]",
             f"Actions tried: {', '.join(_action_name(a) for a in all_actions) if all_actions else 'none'}",
             f"Effective moves: {effective_count}/{len(all_actions)}",
             f"Cumulative reward from these steps: {total_reward:.2f}",
         ]
+        if last_state_coords:
+            lines.append(last_state_coords)
         if invalid_count > 0:
             lines.append(f"Invalid action format: {invalid_count} time(s). Valid actions are: Up, Down, Left, Right (separated by ' || ').")
         if any_success:
@@ -1267,13 +1284,14 @@ class ContextManager:
         env_ids = lm_outputs.non_tensor_batch['env_ids']
         env_inputs = []
         for env_id, response in zip(env_ids, responses):
-            llm_response, actions, think_len = self._parse_response(response)
+            llm_response, actions, think_len, think_coord_fmt_ok = self._parse_response(response)
             env_inputs.append({
                 "env_id": env_id,
                 "llm_raw_response": response,
                 "llm_response": llm_response,
                 "actions": actions,
                 "think_len": think_len,
+                "think_coord_fmt_ok": think_coord_fmt_ok,
             })
         return env_inputs
 
