@@ -4,7 +4,7 @@
 <p align="center"><img src="public/ragen_logo.jpeg" width="300px" alt="RAGEN icon" /></p>
 
 <p align="center">
-  <strong>RAGEN</strong> (<b>R</b>easoning <b>AGEN</b>) is a flexible RL framework for training reasoning agents.
+  <strong>RAGEN</strong> (<b>R</b>easoning <b>AGEN</b>T) is a flexible RL framework for training reasoning agents.
 </p>
 <p align="center">
   We develop <strong>diagnostics to understand <i>how</i> agent RL training works </strong>, and how to fix hidden issues.
